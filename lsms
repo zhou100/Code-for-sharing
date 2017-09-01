@@ -1,0 +1,334 @@
+***********************************
+* Stata Code for cleaning the LSMS data  
+* Yujun Zhou - June 12, 2017
+* with help from Dr.Hope Michelson and Edward Martey
+***********************************
+
+capture log close 
+clear
+set more off 
+
+**** 2013 Baseline subsample obs. 3246 ***
+
+cd "/Users/yujunzhou/Box Sync/lsms/Malawi_2013/MWI_2013_IHPS_v01_M_STATA/Household"
+
+
+
+
+*_______________________________________________________________________________
+
+         *Q 1: FOOD CONSUMPTION SCORES (FCS)
+*_______________________________________________________________________________
+
+********************************************************************************
+*NOTES ON THE WEIGHTS OF THE DIFFERENT FOOD CATEGORIES
+* A Cereals, Grains and Cereal Products: Weight = 2
+* B Root, Tubers and Plantains: Weight = 2
+* C Nuts and Pulses: Weight = 3
+* D Vegetables: Weight = 1
+* E Meat, Fish and Animal Products: Weight = 4
+* F Fruits => weight = 1
+* G Milk/Milk Products: Weight = 4
+* H Fats/Oil => Weight = 0.5
+* I Sugar/Sugar Products/Honey: Weight = 0.5
+* J Spices/Condiments: Weight = 0
+********************************************************************************
+/*gen weighted score FOR CEREALS AND ROOTS*/
+*Listing of the various food categories
+
+use HH_MOD_G2.dta,clear
+
+*list hh_g08a  hh_g08c
+*tab hh_g08a,nolabel
+tab hh_g08a
+
+
+*Recoding of outliers (change 8 days to 7 days)
+replace hh_g08c=7 if hh_g08c==8
+*Combining Cereals and roots (Category A and Category B)
+replace hh_g08a=1 if hh_g08a==1 | hh_g08a==2
+*replace hh_g08b="Main Staples; cereals and grains, roots and tubers" if hh_g08a=="AB"
+collapse (max)hh_g08c, by(y2_hhid qx_type interview_status occ hh_g08a )
+label var hh_g08c "# Days specific food is eaten"
+
+***Specifying Weights Different Food Categories
+gen FWeight = 0
+replace FWeight=2 if hh_g08a==1
+replace FWeight=3 if hh_g08a==3
+replace FWeight=1 if hh_g08a==4 | hh_g08a==6
+replace FWeight=4 if hh_g08a==5 | hh_g08a==4
+replace FWeight=0.5 if hh_g08a==8 | hh_g08a==9
+label var FWeight "Food weight"
+
+***Computing Weighted Food Categories
+gen FCS = hh_g08c*FWeight
+label var FCS "Food Consumption Score"
+
+**Aggregating FCS by households
+collapse (sum)FCS, by(y2_hhid)
+label var FCS "HH food consumption score"
+
+**Creation of Thresholds for FCS
+gen FCS_Thresh=0  //"Poor FCS HHs"
+label var FCS_Thresh "HH FCS Status"
+replace FCS_Thresh=1 if FCS>=21.5 & FCS<=35 //"Borderline FCS"
+replace FCS_Thresh=2 if FCS>35 //"Acceptable FCS"
+
+label define FCS_Thresh 0 "Poor FCS" 1 "Borderline FCS" 2 "Acceptable FCS"
+label values FCS_Thresh FCS_Thresh
+
+sort y2_hhid
+save malawi_2013.dta, replace
+
+/*
+***Summary Characteristics and Graphs (Bar Charts and Box Plot)
+sort FCS
+sum FCS
+graph bar (mean) FCS, over(FCS_Thresh) 
+graph box FCS, over(FCS_Thresh)  */ 
+
+*_______________________________________________________________________________
+    
+	*Q2: HOUSEHOLD DIETARY DIVERSITY SCORE (HDDS)
+*_______________________________________________________________________________
+
+********************************************************************************
+*A diet diversity score is a household-measure of food security that captures ///
+*something about the quality of a diet. It is calculated by counting the number///
+*of foods or food groups from which a household acquired food over the survey ///
+*reference period (24 hours). 
+
+*NOTES ON FOOD CATEGORIES ITEMS TO BE USED FOR THE COMPUTATION (7 CATEGORIES)
+* A Cereals, Grains and Cereal Products: Weight = 2
+* B Root, Tubers and Plantains: Weight = 2
+* C Nuts and Pulses: Weight = 3
+* D Vegetables: Weight = 1
+* E Meat, Fish and Animal Products: Weight = 4
+* F Fruits => weight = 1
+* G Milk/Milk Products: Weight = 4
+* H Fats/Oil => Weight = 0.5
+********************************************************************************
+set more off 
+use "HH_MOD_G2",clear
+
+*Recoding of outliers (change 8 days to 7 days)
+replace hh_g08c=7 if hh_g08c==8
+*Combining Cereals and roots (Category A and Category B)
+replace hh_g08a=1 if hh_g08a==1 | hh_g08a==2
+*replace hh_g08b="Main Staples; cereals and grains, roots and tubers" if hh_g08a=="AB"
+collapse (max)hh_g08c, by(y2_hhid qx_type interview_status occ hh_g08a )
+label var hh_g08c "# Days specific food is eaten"
+
+*Exclude SUGAR and SPICES
+drop if hh_g08a==9 | hh_g08a==10
+
+*Generating Food consumed by hhs over the 24 hours
+gen HDDS=0
+replace HDDS=1 if hh_g08c>=1 & hh_g08c!=.
+// Food categories consumed by hhs - COUNTS
+collapse (sum) HDDS, by(y2_hhid)
+label var HDDS "Household Dietary Diversity Score"
+
+**Creation of Thresholds for HDDS
+gen HDDS_Thresh=0 //"Low Dietary Diversity"
+label var HDDS_Thresh "HH HDDS Thresholds"
+replace HDDS_Thresh=1 if HDDS>=4.5 & HDDS_Thresh<=6 //"Medium Dietary Diversity"
+replace HDDS_Thresh=2 if HDDS>6 //"Good Dietary Diversity"
+
+*Label Variables
+label define HDDS_Thresh 0 "Low Dietary Diversity" 1 "Medium Dietary Diversity" ///
+2 "Good Dietary Diversity"
+label values HDDS_Thresh HDDS_Thresh
+
+/*
+***Summary Characteristics and Graphs (Bar Charts and Box Plot)
+sort HDDS
+sum HDDS
+graph box HDDS, over(HDDS_Thresh) */
+
+***Merging FCS and HDDS
+merge m:m y2_hhid using malawi_2013
+drop _merge
+sort y2_hhid 
+save malawi_2013, replace
+
+*_______________________________________________________________________________
+
+         *Q3. REDUCED COPING STRATEGIES INDEX (rCSI)
+*_______________________________________________________________________________
+
+*NOTES:
+*The IHS3 includes questions to compute the rCSI (Module H). As with the FCS, ///
+*the rCSI involves assigning weights to household responses. The rCSI (like ///
+*the CSI) is designed to capture quantity or sufficiency of consumption. 
+
+set more off 
+use "HH_MOD_H",clear
+
+//Questions relating to COPING STRATEGIES (Full labels from Survey REPORT)
+*In the past 7 days, did you worry that your household would not have enough food
+*hh_h02a: "In the past 7 days, how many days have you or someone in your ///
+	*household had to: Rely on less preferred and/or less expensive foods?"(WGT1)
+*hh_h02b: "In the past 7 days, how many days have you or someone in your ///
+	*household had to: Limit portion size at mealtimes?" (WGT1)
+*hh_h02c: "In the past 7 days, how many days have you or someone in your ///
+	*household had to: Reduce number of meals eaten in a day?" (WGT2)
+* hh_h02d "In the past 7 days, how many days have you or someone in your ///
+	*household had to: Restrict consumption by adults in order for small ///
+	*children to eat?" (WGT2)
+*hh_h02e "In the past 7 days, how many days have you or someone in your ///
+	*household had to: Borrow food, or rely on help from a friend or ///
+	*relative?" (WGT2)
+
+
+**Constructing rCSI
+tab hh_h02a
+gen rCSI=1*hh_h02a + 1*hh_h02b + 2*hh_h02c + 2*hh_h02d +2*hh_h02e
+
+label var rCSI "HH Reduced Coping Strategies Index"
+
+/*
+***Summary Characteristics and Graphs (Bar Charts and Box Plot)
+sort rCSI
+sum rCSI
+graph box rCSI
+
+gen id=_n
+label var id "id"
+line rCSI id
+plot rCSI id 
+*/
+
+***Merging the data
+keep y2_hhid qx_type interview_status rCSI 
+merge m:m y2_hhid using malawi_2013
+drop _merge
+save malawi_2013, replace
+
+*_______________________________________________________________________________
+
+           *Q4. MONTHES OF ADEQUATE HOUSEHOLD FOOD PROVISIONING (MAHFP)
+*_______________________________________________________________________________
+
+********************************************************************************
+*NOTES:
+//Use the rest of the questions in Module H to calculate MAHFP. Calculate the //
+//MAHFP as twelve months minus the total number of months out of the previous //
+//twelve months that the household was unable to meet their food needs. If the///
+//household responded no to hh_h04, then all of the hh_h05* variables should ///
+//be coded as 0s. Your MAHFP score should be between 12 and 0. 
+********************************************************************************
+
+clear
+set more off 
+use "HH_MOD_H"
+
+*Past 12 Months Experienced Food Shortage
+tab  hh_h04
+*Describing the data
+foreach var of varlist hh_h05a-hh_h05s{
+	tab `var'
+}
+
+
+*Recoding values of the response variables
+foreach var of varlist hh_h05a-hh_h05s {
+	gen `var'_num=0
+	replace `var'_num=1 if `var'=="X" & hh_h04==1
+	tab `var'_num
+}
+
+
+
+*Summing the number of response across case_ids
+egen H_Count=rowtotal (hh_h05a_num-hh_h05s_num)
+label var H_Count "Number of months hh was food insecure" 
+*The values must be between 0 and 12
+sum H_Count
+
+*Generating Months of Adequate Household Food Provisioning (MAHFP)
+gen MAHFP = 12 - H_Count
+label var MAHFP "Months of Adequate Household Food Provisioning"
+
+*Drop irrelevant variables
+keep y2_hhid qx_type interview_status MAHFP
+
+***Summary Characteristics and Graphs (Bar Charts and Box Plot)
+/*
+sort MAHFP
+sum MAHFP
+tab MAHFP
+hist MAHFP
+graph box MAHFP
+*/
+***Merging the data
+merge m:m y2_hhid using malawi_2013
+drop _merge
+save malawi_2013, replace
+
+*_______________________________________________________________________________
+
+                *MERGE in DIST, geolocation and time 
+*_______________________________________________________________________________
+
+set more off 
+
+use "HH_MOD_A_FILT",clear
+
+ 
+keep y2_hhid reside qx_type hh_a10a district panelweight region 
+ 
+rename hh_a10a hh_a02 
+rename district hh_a01 
+rename panelweight hh_wgt  
+ 
+ 
+*Merge the Datafile
+merge m:m y2_hhid using malawi_2013
+drop _merge
+save malawi_2013, replace
+
+
+* Merge in geolocation 
+ use "/Users/yujunzhou/Box Sync/lsms/Malawi_2013/MWI_2013_IHPS_v01_M_STATA/Geovariables/HouseholdGeovariables_IHPS",clear
+keep y2_hhid LAT_DD_MOD  LON_DD_MOD 
+rename  LAT_DD_MOD lat_modified
+rename LON_DD_MOD lon_modified 
+
+merge m:m y2_hhid using malawi_2013
+drop _merge
+save malawi_2013, replace
+
+* Merge in year and round 
+use  HH_META.dta,clear
+keep y2_hhid hh_h_start_month 
+gen FS_year = 2013 
+rename hh_h_start_month FS_month
+label variable FS_month "Month FS module was administered"
+ label variable FS_year "Year FS module was administered"
+
+merge m:m y2_hhid using malawi_2013
+drop if _merge ==2
+drop _merge
+
+gen survey_round ="IHPS 2013"
+
+
+* Merge in cell phone  
+use "HH_MOD_F",clear
+keep y2_hhid  hh_f34 
+tab hh_f34
+gen cell_phone = 1 if hh_f34!=0
+replace cell_phone = 0 if hh_f34==0
+rename hh_f34  number_celphones
+
+
+merge m:m y2_hhid using malawi_2013
+drop if _merge ==2
+drop _merge
+
+rename y2_hhid case_id 
+save "/Users/yujunzhou/Box Sync/lsms/FCS_2013_Malawi.dta",replace
+
+
+
