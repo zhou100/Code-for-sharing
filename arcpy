@@ -1,0 +1,316 @@
+#####################################################################
+# Author: Yujun Zhou, University of Illinois
+# Based on python scripts made by Yanli Zhang, Stephen F. Austin State University
+############################################################################
+
+########################################################################################
+# Use ArcPy mapping models for scriping automate mapping tasks based on existing map layer and map layouts. 
+#################################################################################
+
+# import arcpy module
+import arcpy, os,datetime 
+
+#Specify the map document and the data frame
+mxd = arcpy.mapping.MapDocument(r"P:\malawi\IPC_automate_revise.mxd")
+#mxd = arcpy.mapping.MapDocument("CURRENT")   # when using python in ArcGIS to reflect real changes
+df = arcpy.mapping.ListDataFrames(mxd, "Layers")[0]
+
+outPath = r"P:\malawi\maps\newmap\\"    #Define output file folder
+
+layerList = arcpy.mapping.ListLayers(mxd, "", df)   # List all the layers and save them in a list
+
+############################################
+	# RCSI 
+############################################
+# Loop through the measures (set other layers off and the one in loop open)
+# 
+for layer in layerList:
+	layer.visible = False
+
+names = ["IPC_Value","RCSI","Malawi_shp"]  # store names of the open layers
+for layer in layerList:
+  if layer.name in names:
+  		layer.visible = True # Set RCSI, malawi_shp and IPC layer to open 
+
+# refresh the map document to reflecct these changes   		
+arcpy.RefreshTOC()
+arcpy.RefreshActiveView() 		
+
+# 2. 
+# Loop through the yearmon over RCSI and IPC at the same time 
+
+#loop through the yearmon variable in the attribute table for each layer ( loop through attribute based on yearmon)
+yearmon = 201003  
+ #Yearmon (201003, 201004, ...) is used as attribute field name ()
+#Also it is used to control the loop
+
+while yearmon <= 201012:       # 201012 is the last yearmon in 2010
+	for maplayer in layerList:
+		if maplayer.name == "RCSI":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="RCSI.csv.RCSI_"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]    
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "RCSI" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+
+
+yearmon = 201101  # for 2011 months 
+
+while yearmon <= 201103:       # 201103 is the last year in the attribute table
+	for maplayer in layerList:
+		if maplayer.name == "RCSI":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="RCSI.csv.RCSI_"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "RCSI" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+
+############################################
+	# RCSI_rural 
+############################################
+# Loop through the measures (set other layers off and the one in the loop open)
+for layer in layerList:
+	layer.visible = False
+
+names = ["IPC_Value","RCSI_rural","Malawi_shp"]  # store names of the open layers
+for layer in layerList:
+  if layer.name in names:
+  		layer.visible = True # Set RCSI, malawi_shp and IPC layer to open 
+
+# refresh the map document to reflecct these changes   		
+arcpy.RefreshTOC()
+arcpy.RefreshActiveView() 		
+
+# 2. 
+# Loop through the yearmon over RCSI and IPC at the same time 
+
+#loop through the yearmon variable in the attribute table for each layer ( loop through attribute based on yearmon)
+yearmon = 201003  
+ #Yearmon (200303, 200304, ...) is used as attribute field name ()
+#Also it is used to control the loop
+
+while yearmon <= 201012:       # 201012 is the last year in the attribute table
+	for maplayer in layerList:
+		if maplayer.name == "RCSI_rural":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="RCSI_rural.csv.RCSI_rural_"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]    
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "RCSI_rural" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+
+
+yearmon = 201101  # for 2011 months 
+
+while yearmon <= 201103:       # 201103 is the last year in the attribute table
+	for maplayer in layerList:
+		if maplayer.name == "RCSI_rural":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="RCSI_rural.csv.RCSI_rural_"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]    
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "RCSI_rural" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+
+
+############################################
+	# FCS
+############################################
+# Loop through the measures (set other layers off and the one in loop open)
+# 
+for layer in layerList:
+	layer.visible = False
+
+names = ["IPC_Value","FCS","Malawi_shp"]  # store names of the open layers
+for layer in layerList:
+  if layer.name in names:
+  		layer.visible = True # Set RCSI, malawi_shp and IPC layer to open 
+
+# refresh the map document to reflecct these changes   		
+arcpy.RefreshTOC()
+arcpy.RefreshActiveView() 		
+
+# 2. 
+# Loop through the yearmon over RCSI and IPC at the same time 
+
+#loop through the yearmon variable in the attribute table for each layer ( loop through attribute based on yearmon)
+yearmon = 201003  
+ #Yearmon (201003, 201004, ...) is used as attribute field name ()
+#Also it is used to control the loop
+
+while yearmon <= 201012:       # 201012 is the last yearmon in 2010
+	for maplayer in layerList:
+		if maplayer.name == "FCS":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="FCS.csv.FCS_"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]   
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "FCS" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+
+
+yearmon = 201101  # for 2011 months 
+
+while yearmon <= 201103:       # 201103 is the last year in the attribute table
+	for maplayer in layerList:
+		if maplayer.name == "FCS":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="FCS.csv.FCS_"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]   
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "FCS" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+
+############################################
+	# FCS_rural 
+############################################
+# Loop through the measures (set other layers off and the one in the loop open)
+for layer in layerList:
+	layer.visible = False
+
+names = ["IPC_Value","FCS_rural","Malawi_shp"]  # store names of the open layers
+for layer in layerList:
+  if layer.name in names:
+  		layer.visible = True # Set RCSI, malawi_shp and IPC layer to open 
+
+# refresh the map document to reflecct these changes   		
+arcpy.RefreshTOC()
+arcpy.RefreshActiveView() 		
+
+# 2. 
+# Loop through the yearmon over RCSI and IPC at the same time 
+
+#loop through the yearmon variable in the attribute table for each layer ( loop through attribute based on yearmon)
+yearmon = 201003  
+ #Yearmon (200303, 200304, ...) is used as attribute field name ()
+#Also it is used to control the loop
+
+while yearmon <= 201012:       # 201012 is the last year in the attribute table
+	for maplayer in layerList:
+		if maplayer.name == "FCS_rural":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="FCS_rural.csv.FCS_rural"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]   
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "FCS_rural" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+
+
+yearmon = 201101  # for 2011 months 
+
+while yearmon <= 201103:       # 201103 is the last year in the attribute table
+	for maplayer in layerList:
+		if maplayer.name == "FCS_rural":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="FCS_rural.csv.FCS_rural"+ str(yearmon)
+		if maplayer.name == "IPC_Value":
+			if maplayer.symbologyType == "GRADUATED_COLORS":
+				maplayer.symbology.valueField ="IPC_value.csv.ipc_value_"+ str(yearmon)
+				#maplayer.symbology.showotherValues = False
+				#Remove Null Value fron display  
+			 			    #maplayer.symbology.classBreakLabels = ["0 to 19.99",] 
+			      
+	# Change title for each map
+	a_string = str (yearmon)  
+	b_number = int(float(a_string[-2:]))
+	b_string = datetime.date(1900,b_number,1).strftime('%B')
+	mxd.title = b_string + "-" + a_string[:4]   
+	#export each map as a jpeg file. Also we can use ExportToPDF method. 
+	nameJPEG = outPath + "FCS_rural" + str(yearmon) + ".jpg"   #spedify each output file name
+	arcpy.mapping.ExportToJPEG(mxd, nameJPEG)    
+	yearmon = yearmon + 1   
+	
+
+del mxd, df
+
+	
+
+
+
+
