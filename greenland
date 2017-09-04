@@ -1,5 +1,6 @@
 ####################################################
 # R code for extracting the US greenland raster data 
+# Based on code from Guyu Ye 
 ####################################################
 
 library(ggplot2) #Calls: fortify, ggplot
