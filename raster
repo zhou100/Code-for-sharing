@@ -1,5 +1,6 @@
 #############################################
 # R code for download, process and extract raster data
+# Based on code by Guyu Ye and Akito Kamei 
 #############################################
 
 username <- "zhou100"
