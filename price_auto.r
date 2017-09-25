@@ -1,3 +1,8 @@
+##################################################################
+# Author: Yujun Zhou, University of Illinois , Sep 25, 2017
+# R code for automatic cleaning, processing and merging excel tables
+#################################################################
+
 #setwd("C:\\Users\\Administrator\\Box Sync\\Research\\Price_data_auto\\Market data")  # wd windows version
 setwd("/Users/yujunzhou/Box Sync/Research/Price_data_auto")
 rm(list=ls())
